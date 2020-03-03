@@ -1,0 +1,136 @@
+---
+title: "Botanical_fanfeng"
+author: "FAN FENG"
+fontsize: 12pt
+
+
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+This report will mainly explore the relationship between valence, gender, age and the outcome variables.We think there maybe a difference in valence between genders under same condition.
+
+Similarly, we expect to see that age will affect the pro-environmental behaviours.Investigating whether education affect pro-environmental behaviour and if it is connected to valence and various demographic variables as well as the previous proposal said.
+
+## Introduction
+To understand how  education and different walking affect pro-environmental behaviour, and to understand if valence and various demographic variables are associated with pro-environmental behaviour.
+
+We use linear regression to fit the models, and use hypothesis tests to determine if the variable has a significant linear relationship.
+
+We seprate the dataset into within control and without control.We fit the model base on these two different dataset and use different demographic variables to see their effect on pro-environmental actions.
+
+
+## Data Description
+This report plot the histogram of Age and Z_beh_Score of the data set and plot the distribution of gender and valence as well.
+
+I use QQplot to check the normality of response variable and got the result of the response variable is not normal.We decided to use multiple regression instead of two way Anova which we mentioned in the proposal.
+
+We also output the graph of distribution of arousal by education and the boxplot of it.In order to check the relationship between them.
+
+```{r cars,echo=FALSE}
+data <- read.csv("~/Downloads/AndreaByfuglien_data.csv", head = T)
+library(tidyverse)
+library(ggplot2)
+library(broom)
+par(mfrow= c(1,2))
+dat_mut <- data %>% select(Valence, Gender) %>% mutate(Valence = as.factor(Valence), Gender = as.factor(Gender)) %>% 
+  na.omit()
+levels(data$Gender) <- c("Male", "Female", "Other", "Prefer not to say")
+ggplot(dat_mut, aes(x = Valence, fill = Gender)) + 
+  geom_bar(stat= 'count', position = 'dodge') + 
+  labs( x = "Valence", y = "Number of participants", fill = "Gender")+
+  ggtitle("Distribution of Valence by Gender ") +
+  theme(legend.text=element_text(size=7))
+dat_mut2 <- data %>% select(Arousal, Education) %>% mutate(Arousal = as.factor(Arousal), Education = as.factor(Education)) %>% 
+  na.omit()
+ggplot(dat_mut2, aes(x = Arousal, fill = Education)) + 
+  geom_bar(stat= 'count', position = 'dodge') + 
+  labs( x = "Arousal", y = "Number of participants", fill = "Education")+
+  ggtitle("Distribution of Arousal by Education ") +
+  theme(legend.text=element_text(size=7))
+#qq plot for response
+qqnorm(data$Z_Beh_Score)
+hist(data$Z_Beh_Score,col="lightblue",border="white")
+
+hist(data$Age,col="lightblue",border="white",ylim =c(0,65))
+
+boxplot(data$Arousal~data$Walk)
+
+
+#deal with data
+data_m <- data %>% filter(Condition == 1 |Condition == 2|Condition == 3|Condition == 4)
+newdata <- na.omit(data_m)
+
+
+
+```
+
+## Method
+Two way anova have many assumption restrict and what we checked before showed that two way anova is not suitable to use.We decided to use multiple regression.This method is to find linear relationship between our reponse variables and explanatory variables.The result of this method can tell us whether this two or more variables have significant relationship or not.
+
+## Result
+Table1 and Table2 showed that valence and political have a significant relationship with pro_envrionmental actions under conditions within the control.
+
+Table3 and Table4 showed that valence do not have significant relationship with reponse variable and political is still significant related but the level is lower.
+
+Table5 showed that we do not have enough evidence to say there have interaction between arousal and education.
+
+Table6 and 7 is the combination of the table.
+
+We use barplot to compare the effection of different walks.From the graph,we can find that tree walk do have a higher mean than ground walk.We use barplot to compare the effection of education.From the graph,we can find that people who get educated do have a higher mean than those who didn't.
+
+We use linear model fit the walk and education seprately.The results showed that there is no significant relationship between walk and response variable and also no relationship between education and pro-environmental actions.
+
+We can see maybe the difference showed in the boxplot is cause by the high variance.
+
+
+```{r pressure}
+#with control
+fit1<- lm(Z_Beh_Score~as.factor(Condition)+Valence,data=data)
+tidy(fit1) %>%knitr::kable(caption = "valence and condition under control")
+fit2<- lm(Z_Beh_Score~as.factor(Condition)+Political,data=data)
+tidy(fit2) %>%knitr::kable(caption = "political and condition under control")
+#without control
+fit4<- lm(Z_Beh_Score~as.factor(Walk)+as.factor(Education)+Valence,data=data_m)
+tidy(fit4) %>%knitr::kable(caption = "valence and condition without control")
+fit5<- lm(Z_Beh_Score~as.factor(Condition)+Political,data=data_m)
+tidy(fit5) %>%knitr::kable(caption = "political and condition without control")
+#interaction between arousal and education
+fit6<- lm(Z_Beh_Score~as.factor(Walk)*as.factor(Education),data=data_m)
+tidy(fit6) %>%knitr::kable(caption = "interaction between walk and education")
+
+#full model without control
+fitFull<- lm(Z_Beh_Score~as.factor(Condition)+Valence+Age+Political,data=data_m)
+tidy(fitFull)
+#full model with control
+fitFull2<- lm(Z_Beh_Score~as.factor(Condition)+Valence+Age+Political,data=data)
+tidy(fitFull2)
+
+dat_TW <- data %>% select(Walk, Z_Beh_Score) %>% mutate(Walk = as.factor(Walk), Z_Beh_Score = as.factor(Z_Beh_Score)) %>% 
+  na.omit()
+dat_TW$Z_Beh_Score<-as.integer(dat_TW$Z_Beh_Score)
+boxplot(dat_TW$Z_Beh_Score~dat_TW$Walk,ylim=c(0,60))
+
+dat_ED <- data%>% select(Education, Z_Beh_Score) %>% mutate(Education = as.factor(Education), Z_Beh_Score = as.factor(Z_Beh_Score)) %>% 
+  na.omit()
+dat_ED$Z_Beh_Score<-as.integer(dat_ED$Z_Beh_Score)
+boxplot(dat_ED$Z_Beh_Score~dat_ED$Education,ylim=c(0,60))
+
+fit7<- lm(Z_Beh_Score~as.factor(Education),data=data)
+tidy(fit7)  %>%knitr::kable(caption = "Education related to pro-environmental actions")
+fit8<- lm(Z_Beh_Score~as.factor(Walk),data=data)
+tidy(fit8)  %>%knitr::kable(caption = "Education related to pro-environmental actions")
+```
+
+
+## Conclusion
+
+After analyzing the data, we can conclude that valence and political have a significant relationship with pro_envrionmental actions under conditions within the control.And when we remove the control,we can see valence is not significant and the level of political is lower.
+
+From the output,we can find that there is no interaction between arousal and education.We can also find from the graph that tree walk have higher response than ground walk and education do improve people's pro-environmental actions.
+
+For the future analysis,we can use Eco_mean,nr and nep which represent how a person connects to nature as our response variables.
